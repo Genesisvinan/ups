@@ -31,6 +31,21 @@ public class PersonService {
     }
 
     public ResponseEntity createPerson(Person person){
+        for (Person registeredPerson : personList) {
+            if (registeredPerson.getId().equals(person.getId())) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The ID is already registered");
+            }
+        }
+        if (person.getName() == null || person.getName().isEmpty() || person.getName().isBlank()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Name is required");
+        }else if (person.getLastname() == null || person.getLastname().isEmpty() || person.getLastname().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lastname is required");
+        }else if (person.getAge() <= 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Age is required");
+        }else if (person.getId() == null || person.getId().isEmpty() || person.getId().isBlank()){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Id is required");
+        }
+
         personList.add(person);
         return ResponseEntity.status(HttpStatus.OK).body("Person successfully registered");
     }
