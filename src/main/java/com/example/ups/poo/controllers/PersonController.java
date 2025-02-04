@@ -36,6 +36,10 @@ public class PersonController{
     public ResponseEntity updatePerson(@RequestBody Person person){
         return personService.updatePerson(person);
     }
+    @DeleteMapping("/delete-person")
+    public ResponseEntity deletePerson(@RequestParam String id){
+        return personService.deletePersonById(id);
+    }
 
 }
 
