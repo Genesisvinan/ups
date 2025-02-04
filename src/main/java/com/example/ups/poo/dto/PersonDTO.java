@@ -9,12 +9,9 @@ import lombok.Setter;
 @AllArgsConstructor
 @Setter
 @Getter
-public class Person {
+public class PersonDTO {
     private String name;
     private String lastname;
     private int age;
     private String id;
-
-
-
 }
