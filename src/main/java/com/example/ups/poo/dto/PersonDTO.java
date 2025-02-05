@@ -11,7 +11,6 @@ import lombok.Setter;
 @Getter
 public class PersonDTO {
     private String name;
-    private String lastname;
     private int age;
     private String id;
 }
