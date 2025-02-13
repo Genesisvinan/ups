@@ -27,19 +27,20 @@ public class PersonController{
         return personService.getPersonById(id);
     }
 
-//    @PostMapping("/person")
-//    public ResponseEntity createPerson(@RequestBody PersonDTO person){
-//        return personService.createPerson(person);
-//    }
-//
-//    @PutMapping("/update-person")
-//    public ResponseEntity updatePerson(@RequestBody PersonDTO person){
-//        return personService.updatePerson(person);
-//    }
-//    @DeleteMapping("/delete-person")
-//    public ResponseEntity deletePerson(@RequestParam String id){
-//        return personService.deletePersonById(id);
-//    }
+    @PostMapping("/person")
+    public ResponseEntity createPerson(@RequestBody PersonDTO person){
+        return personService.createPerson(person);
+    }
+
+    @PutMapping("/update-person")
+    public ResponseEntity updatePerson(@RequestBody PersonDTO person){
+        return personService.updatePerson(person);
+    }
+
+    @DeleteMapping("/delete-person")
+    public ResponseEntity deletePerson(@RequestParam String id){
+        return personService.deletePersonById(id);
+    }
 
 }
 
