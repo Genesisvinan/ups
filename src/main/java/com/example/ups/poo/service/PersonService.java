@@ -17,23 +17,22 @@ public class PersonService {
 
     private final PersonRepository personRepository;
 
-    public PersonService(PersonRepository personRepository){
+    public PersonService(PersonRepository personRepository) {
         this.personRepository = personRepository;
     }
 
-    private PersonDTO mapPersonToPersonDTO(Person person){
+    private PersonDTO mapPersonToPersonDTO(Person person) {
         PersonDTO personDTO = new PersonDTO();
         personDTO.setName(person.getName() + " " + person.getLastname());
         personDTO.setAge(person.getAge());
         personDTO.setId(person.getPersonId());
         return personDTO;
-
     }
 
-    private List<PersonDTO> fetchAllPeopleRecords(){
-        Iterable<Person> personIterable= personRepository.findAll();
+    private List<PersonDTO> fetchAllPeopleRecords() {
+        Iterable<Person> personIterable = personRepository.findAll();
         List<PersonDTO> personDTOList = new ArrayList<>();
-        for (Person per: personIterable) {
+        for (Person per : personIterable) {
             PersonDTO personDTO = mapPersonToPersonDTO(per);
             personDTOList.add(personDTO);
         }
@@ -42,7 +41,7 @@ public class PersonService {
 
     public ResponseEntity getAllPeople() {
         List<PersonDTO> personDTOList = fetchAllPeopleRecords();
-    if (personDTOList.isEmpty()) {
+        if (personDTOList.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Person list is empty");
         }
         return ResponseEntity.status(HttpStatus.OK).body(personDTOList);
@@ -60,54 +59,68 @@ public class PersonService {
         }
     }
 
-//    public ResponseEntity createPerson(PersonDTO person) {
-//        for (PersonDTO registeredPerson : personDTOList) {
-//            if (registeredPerson.getId().equals(person.getId())) {
-//                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The ID is already registered");
-//            }
-//        }
-//        if (person.getName() == null || person.getName().isEmpty() || person.getName().isBlank()) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Name is required");
-//        } else if (person.getLastname() == null || person.getLastname().isEmpty() || person.getLastname().isBlank()) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Lastname is required");
-//        } else if (person.getAge() <= 0) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Age is required");
-//        } else if (person.getId() == null || person.getId().isEmpty() || person.getId().isBlank()) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Id is required");
-//        }
-//
-//        personList.add(person);
-//        return ResponseEntity.status(HttpStatus.OK).body("Person successfully registered");
-//    }
-//
-//    public ResponseEntity updatePerson(PersonDTO person) {
-//        for (PersonDTO per : personDTOList) {
-//            if (per.getId().equalsIgnoreCase(person.getId())) {
-//                if (person.getName() != null) {
-//                    per.setName(person.getName());
-//                }
-//                if (person.getLastname() != null) {
-//                    per.setLastname(person.getLastname());
-//                }
-//                if (person.getAge() > 0) {
-//                    per.setAge(person.getAge());
-//                }
-//                return ResponseEntity.status(HttpStatus.OK).body("Person with id: " + person.getId() + " was successfully updated");
-//            }
-//        }
-//        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Person with id: " + person.getId() + " not found");
-//    }
-//
-//    public ResponseEntity deletePersonById(String id) {
-//        if (id != null && id.length() < 10) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("id: " + id + "does not have the required length (10 chars min");
-//        }
-//        for (PersonDTO person : personList) {
-//            if (id.equalsIgnoreCase(person.getId())) {
-//                personList.remove(person);
-//                return ResponseEntity.status(HttpStatus.OK).body("Person with id: " + id + " was successfully deleted");
-//            }
-//        }
-//        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Person with id: " + id + "was not found");
-//    }
+    private Person NameAndLastnameSplit(Person person, PersonDTO personDTO) {
+        String[] nameArray = personDTO.getName().split(" ");
+        String name = nameArray[0];
+        String lastname = nameArray[1];
+        person.setName(name);
+        person.setLastname(lastname);
+        person.setPersonId(personDTO.getId());
+        return person;
+    }
+
+    private Person mapPersonDTOtoPerson(PersonDTO personDTO) {
+        Person person = NameAndLastnameSplit(new Person(), personDTO);
+        String personId = personDTO.getId();
+        Integer age = personDTO.getAge();
+        person.setPersonId(personId);
+        person.setAge(age);
+        return person;
+    }
+
+    public ResponseEntity createPerson(PersonDTO personDTO) {
+        Optional<Person> existingPerson = personRepository.findByPersonId(personDTO.getId());
+        if (existingPerson.isPresent()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("The ID is already registered");
+        } else if (personDTO.getName() == null || personDTO.getName().isEmpty() || personDTO.getName().isBlank()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Name is required");
+        } else if (personDTO.getAge() <= 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Age is required");
+        }
+        Person person = mapPersonDTOtoPerson(personDTO);
+        personRepository.save(person);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Person successfully registered");
+    }
+
+    public ResponseEntity updatePerson(PersonDTO personDTO) {
+        Optional<Person> personOptional = personRepository.findByPersonId(personDTO.getId());
+        if (personOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Person with id: " + personDTO.getId() + " not found");
+        }
+        Person person = personOptional.get();
+        if (personDTO.getName() != null && !personDTO.getName().isBlank()) {
+            String fullName = personDTO.getName();
+            if (fullName.contains(" ")) {
+                person = NameAndLastnameSplit(person, personDTO);
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Both first and last names are required");
+            }
+        }
+        if (personDTO.getAge() > 0) {
+            person.setAge(personDTO.getAge());
+        } else if (personDTO.getAge() != 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Age is incorrect. Please provide a valid age greater than 0.");
+        }
+        personRepository.save(person);
+        return ResponseEntity.status(HttpStatus.OK).body("Person with Id: " + personDTO.getId() + " was successfully updated");
+    }
+
+    public ResponseEntity deletePersonById(String id) {
+        Optional<Person> personOptional = personRepository.findByPersonId(id);
+        if (personOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Person with id: " + id + " was not found");
+        }
+        personRepository.delete(personOptional.get());
+        return ResponseEntity.status(HttpStatus.OK).body("Person with id: " + id + " was successfully deleted");
+    }
 }
